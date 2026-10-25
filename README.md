@@ -1,9 +1,5 @@
 # Backend Engineering Systems & Algorithms
 
-[![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-
 A high-performance collection of production-grade backend systems and data structures built in Python. This repository demonstrates core principles in **Test-Driven Development (TDD)**, **advanced object-oriented architecture**, and **algorithmic efficiency** for distributed and concurrent service workloads.
 
 ---
