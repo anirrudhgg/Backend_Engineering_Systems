@@ -1,37 +1,56 @@
-# Backend Engineering Systems & Algorithms
+# Backend Engineering Systems
 
-A high-performance collection of production-grade backend systems and data structures built in Python. This repository demonstrates core principles in **Test-Driven Development (TDD)**, **advanced object-oriented architecture**, and **algorithmic efficiency** for distributed and concurrent service workloads.
+Three small Python domain models, each with a `unittest` suite. Together they practise modelling business rules in code: money handling, state changes and priority scheduling.
 
----
+| Module | What it models | Key techniques |
+|---|---|---|
+| `payment_processor.py` | Payments with tiered fees, regional tax and an audit trail | `Decimal` money, frozen dataclasses, input validation |
+| `scrum_board.py` | Sprints, item states, velocity and burndown | Dataclasses, date handling, rule enforcement |
+| `kanban_scheduler.py` | A work queue with service classes and WIP limits | `heapq` priority queue, CD3 ordering |
 
-## 🛠️ Included Modules & Architecture
+Requires Python 3.10+ and no extra packages.
 
-### 1. FinTech Payment Processor (`payment_processor.py`)
-A secure, audit-compliant financial transaction engine designed to handle multi-currency payments, tiered fee calculations, and regional taxation rules.
-* **Tiered Fee Engine:** Dynamically calculates processing fees based on tiered volume thresholds (e.g., 1.5% down to 1.0%).
-* **Regional Tax Compliance:** Automated tax rate application based on currency and origin jurisdiction (e.g., EU VAT handling).
-* **Immutable Audit Trail:** Uses Python `dataclasses` and UUID generation to log immutable transaction events.
-* **Defensive Copying:** Implements secure internal state management (`get_transaction_history` returns a deep copy) to protect against external collection mutation and data leaks.
-
-### 2. Agile Scrum Board Engine (`scrum_board.py`)
-A robust domain model simulating enterprise project management systems, sprint lifecycles, and velocity tracking.
-* **Sprint & Backlog Modeling:** Manages item states (`todo`, `in-progress`, `done`) mapped to discrete sprint capacities.
-* **Rolling Velocity Metrics:** Computes historical team velocity rolling averages across completed sprints.
-* **Burndown Tracking:** Generates programmatic remaining-effort arrays for burndown chart rendering.
-
-### 3. Kanban Priority-Queue Scheduler (`kanban_scheduler.py`)
-An advanced scheduling framework leveraging Python’s `heapq` priority queue to optimize workflow efficiency under restrictive **Work-In-Progress (WIP)** limits.
-* **Service Class Prioritization:** Implements strict priority inversion handling for `EXPEDITE` (production outages) versus `STANDARD` and `INTANGIBLE` technical debt tasks.
-* **CD3 Optimization:** Automatically calculates and sorts items using the **Cost of Delay Divided by Duration (CD3)** lean economic metric to maximize throughput.
-* **WIP Enforcement:** Programmatically blocks queue overloading with strict threshold checks.
-
----
-
-## 🧪 Test-Driven Development (TDD) & Quality Assurance
-All modules are backed by comprehensive, self-contained unit test suites utilizing Python’s native `assert` syntax. Tests cover state isolation, boundary limits, and edge cases.
-
-To execute the verification test suites locally:
-```bash
-python payment_processor.py
+```
+python -m unittest discover tests -v    # run all 31 tests
+python payment_processor.py             # short demo of each module
 python scrum_board.py
 python kanban_scheduler.py
+```
+
+## Payment processor
+
+- **Exact money:** amounts, fees and taxes are `Decimal` values rounded to cents, never `float`
+- **Marginal fee tiers:** 1.5% on the first 1,000, 1.2% up to 5,000 and 1.0% above, applied like tax brackets so a larger payment never pays a smaller fee
+- **Regional tax:** looked up from the currency's region (the 15% EU rate is an example value)
+- **Tamper-proof records:** receipts and audit events are frozen dataclasses, and the history is returned as a tuple, so callers can read it but not change it
+- **Validation:** zero or negative amounts and unsupported currencies raise `ValueError`
+
+## Scrum board
+
+- Sprints have a start and end date and reject items whose story points exceed the capacity
+- Items move between `todo`, `in-progress` and `done`; unknown states and IDs raise errors
+- Completing a sprint records its velocity (completed points); `current_velocity()` averages the last three sprints
+- `burndown()` returns the remaining points for each day of the sprint, based on when each item was finished
+
+## Kanban scheduler
+
+- Items are pulled by **service class** first (Expedite, Fixed Date, Standard, Intangible), then by **CD3** (Cost of Delay ÷ Duration, highest first), then first-in-first-out
+- `pull_next()` respects the WIP limit, and `complete()` frees a slot
+- Only one Expedite item can be active or queued at a time
+- `prioritised_backlog()` shows the queue in exactly the order `pull_next()` will take it
+
+## Tests
+
+`tests/` holds 31 tests, including boundary cases: fees just either side of a tier limit, rejected inputs, attempts to modify stored receipts, rolling velocity over more than three sprints, and pull order matching the displayed backlog.
+
+## Project structure
+
+```
+├── payment_processor.py
+├── scrum_board.py
+├── kanban_scheduler.py
+└── tests/
+    ├── test_payment_processor.py
+    ├── test_scrum_board.py
+    └── test_kanban_scheduler.py
+```
